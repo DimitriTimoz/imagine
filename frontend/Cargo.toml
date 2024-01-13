@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 yew = { version = "0.21.0", features = ["csr"] }
+yew-template = "0.10.0"

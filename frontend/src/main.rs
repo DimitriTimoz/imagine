@@ -1,4 +1,8 @@
-use yew::prelude::*;
+
+mod prelude;
+use crate::prelude::*;
+pub mod image;
+use image::Image;
 
 fn main() {
     yew::Renderer::<App>::new().render();
@@ -9,7 +13,7 @@ fn main() {
 pub fn app() -> Html {
     html! {
         <div>
-            <h2 class={"heading"}>{"Hello, World!"}</h2>
+            <Image src="https://batiment.imag.fr/img/imag.png" zoom={1.0} position={(0, 0)}  />
         </div>
     }
 }

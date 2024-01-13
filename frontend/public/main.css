@@ -1,9 +1,7 @@
-body {
-    margin: 20px;
-    background: #2d2d2d;
-    color: white;
-}
-
-.heading {
-    text-align: center;
+html, body {
+    background-color: #3d3d3d;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
