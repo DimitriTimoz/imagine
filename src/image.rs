@@ -36,6 +36,7 @@ impl ImageState {
         let zoom_x = window_size.width / image_rect.width();
         let zoom_y = window_size.height / image_rect.height();
         self.zoom = zoom_x.min(zoom_y);
+        self.center = Point::new(0.0, 0.0);
     }
 
     pub fn get_rect(&self) -> druid::Rect {
