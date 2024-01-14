@@ -3,11 +3,14 @@ pub mod prelude;
 pub mod image;
 
 
+use std::sync::Arc;
+
 use prelude::*;
 
 #[derive(Clone, Data, Lens)]
 pub struct AppState {
     pub image_state: image::ImageState,
+    pub text: Arc<String>,
 }
 
 
@@ -19,6 +22,7 @@ fn main() {
         .title("Imagine");
     let initial_data = AppState {
         image_state: image::ImageState::default(),
+        text: Arc::new("Hello World!".to_string()),
     };
 
     AppLauncher::with_window(main_window)

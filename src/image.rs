@@ -1,4 +1,4 @@
-use druid::{widget::{Image, Painter}, Env, piet::{InterpolationMode, CoreGraphicsImage}, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Size, Point};
+use druid::{piet::InterpolationMode, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Size, Point};
 use ::image::open;
 
 use crate::prelude::*;
