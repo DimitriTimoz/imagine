@@ -38,19 +38,27 @@ impl Widget<ImageState> for ImageWidget {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, env: &Env) {
         let raw_image_data = data.image_buf.raw_pixels();
         let image = ctx.make_image(data.image_buf.width(), data.image_buf.height(), raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
-
+        // Center image
+        let center = (data.center.0 as f64, data.center.1 as f64);
+        let center = Point::new(center.0, center.1);
+        ctx.transform(druid::Affine::translate(center.to_vec2()));
         ctx.draw_image(&image, druid::Rect::new(0.0, 0.0, data.image_buf.width() as f64 * data.zoom, data.image_buf.height() as f64 * data.zoom), InterpolationMode::Bilinear);
     }
 
     fn event(&mut self, ctx: &mut druid::widget::prelude::EventCtx, event: &druid::widget::prelude::Event, data: &mut ImageState, env: &Env) {
         match event {
-            druid::widget::prelude::Event::Zoom(zoom) => {
+            Event::Zoom(zoom) => {
                 // TODO: zoom to mouse position
                 data.zoom += zoom;
                 ctx.request_paint();
             },
-            druid::widget::prelude::Event::MouseMove(mouse_event) => {
+            Event::MouseMove(mouse_event) => {
                 data.mouse_pos = mouse_event.pos;
+                ctx.request_paint();
+            },
+            Event::Wheel(wheel_event) => {
+                data.center.0 -= wheel_event.wheel_delta.x as i32;
+                data.center.1 -= wheel_event.wheel_delta.y as i32;
                 ctx.request_paint();
             },
             _ => {}

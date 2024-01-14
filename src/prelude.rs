@@ -1,7 +1,7 @@
 pub use crate::ui;
 pub use crate::image;
 pub use crate::AppState;
-pub use druid::widget::Label;
+pub use druid::widget::prelude::*;
 pub use druid::{
     AppLauncher,
     Widget,
