@@ -6,6 +6,10 @@ pub use druid::{
     Widget,
     WindowDesc,
     Color,
+    ImageBuf, 
+    WidgetExt, 
+    Data, 
+    Lens,
     widget::{
         Split, Container, Flex
 }};
