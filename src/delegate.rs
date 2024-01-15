@@ -17,6 +17,7 @@ impl AppDelegate<AppState> for Delegate {
             data.image_state.change_image(file_info.path().to_str().unwrap(), Size::new(1200.0, 800.0));
             return Handled::Yes;
         } 
+
         Handled::No
     }
 }

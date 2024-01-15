@@ -6,7 +6,7 @@ pub mod delegate;
 use std::sync::Arc;
 
 use delegate::Delegate;
-use druid::AppDelegate;
+
 use prelude::*;
 
 #[derive(Clone, Data, Lens)]
@@ -18,6 +18,8 @@ pub struct AppState {
 
 
 fn main() {
+    // TODO: load the window but don't show it until we have an image
+    // TODO: ask for a file to open if none is provided
     let main_window = WindowDesc::new(ui::build_ui())
         .window_size((1200.0, 800.0))
         .menu(ui::make_menu)
@@ -28,6 +30,7 @@ fn main() {
         text: Arc::new("Hello World!".to_string()),
         window_size: Size::new(1200.0, 800.0),
     };
+    
 
     AppLauncher::with_window(main_window)
         .delegate(Delegate)

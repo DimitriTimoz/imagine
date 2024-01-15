@@ -58,6 +58,7 @@ impl ImageState {
             let mouse_pos = mouse_pos * (self.zoom - zoom_delta);
             self.center += mouse_pos * 0.01;
         }
+        ctx.request_layout();
         ctx.request_paint();
     }
 
@@ -81,15 +82,17 @@ impl Widget<ImageState> for ImageWidget {
     fn lifecycle(&mut self, _: &mut LifeCycleCtx, _: &LifeCycle, _: &ImageState, _: &Env) {}
 
     fn update(&mut self, ctx: &mut UpdateCtx, prev_data: &ImageState, new_data: &ImageState, _: &Env) {
-        if prev_data.path != new_data.path {            
+        if prev_data.path != new_data.path {   
+            ctx.request_layout();         
             ctx.request_paint();
         }
     }
 
-    fn layout(&mut self, lay: &mut LayoutCtx, bc: &BoxConstraints, _: &ImageState, _: &Env) -> Size {
+    fn layout(&mut self, lay: &mut LayoutCtx, bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {
         // Max of parent size
         // WARNING: The parent is a Scroll widget, so the parent size is infinite
-        lay.window().get_size()
+        bc.constrain(data.get_rect().size())
+        
     }
     
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, env: &Env) {
@@ -104,7 +107,7 @@ impl Widget<ImageState> for ImageWidget {
         let center = center - data.center;
         let center = center - Point::new(image_rect.width() / 2.0, image_rect.height() / 2.0).to_vec2();
 
-        ctx.transform(druid::Affine::translate(center));
+        //ctx.transform(druid::Affine::translate(center));
         ctx.draw_image(&image, druid::Rect::new(0.0, 0.0, data.image_buf.width() as f64 * data.zoom, data.image_buf.height() as f64 * data.zoom), InterpolationMode::Bilinear);
     }
 

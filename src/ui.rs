@@ -1,12 +1,11 @@
-use druid::{WidgetExt, Menu, WindowId, platform_menus::mac::file, widget::{TextBox, BackgroundBrush, Scroll}, FileDialogOptions, MenuItem, commands};
+use druid::{WidgetExt, Menu, WindowId, widget::{Scroll}, FileDialogOptions, MenuItem, commands};
 
 use crate::{prelude::*, AppState};
 
 pub fn build_ui() -> impl Widget<AppState> {
     Container::new(
 Scroll::new(
-        Flex::row()
-                    .with_flex_child(image::ImageWidget {}, 1.0)
+        Container::new(image::ImageWidget {})
                 .center()
         )
     ).lens(AppState::image_state).center()
