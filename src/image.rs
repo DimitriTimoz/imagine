@@ -99,16 +99,8 @@ impl Widget<ImageState> for ImageWidget {
         let raw_image_data = data.image_buf.raw_pixels();
         let image = ctx.make_image(data.image_buf.width(), data.image_buf.height(), raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
 
-        let parent_size = ctx.size();
-        let image_rect = druid::Rect::new(0.0, 0.0, data.image_buf.width() as f64, data.image_buf.height() as f64);
-        let image_rect = image_rect.scale_from_origin(data.zoom);
-
-        let center = Point::new(parent_size.width / 2.0, parent_size.height / 2.0);
-        let center = center - data.center;
-        let center = center - Point::new(image_rect.width() / 2.0, image_rect.height() / 2.0).to_vec2();
-
-        //ctx.transform(druid::Affine::translate(center));
-        ctx.draw_image(&image, druid::Rect::new(0.0, 0.0, data.image_buf.width() as f64 * data.zoom, data.image_buf.height() as f64 * data.zoom), InterpolationMode::Bilinear);
+        let image_rect = data.get_rect();
+        ctx.draw_image(&image, image_rect, InterpolationMode::Bilinear);
     }
 
     fn event(&mut self, ctx: &mut druid::widget::prelude::EventCtx, event: &druid::widget::prelude::Event, data: &mut ImageState, env: &Env) {
