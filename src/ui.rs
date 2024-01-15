@@ -1,4 +1,4 @@
-use druid::{WidgetExt, Menu, WindowId, widget::{Scroll}, FileDialogOptions, MenuItem, commands};
+use druid::{WidgetExt, Menu, WindowId, FileDialogOptions, MenuItem, commands};
 
 use crate::{prelude::*, AppState};
 

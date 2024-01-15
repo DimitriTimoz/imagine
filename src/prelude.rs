@@ -6,6 +6,7 @@ pub use druid::{
     AppLauncher,
     Widget,
     WindowDesc,
+    WindowId,
     Color,
     ImageBuf, 
     WidgetExt, 
@@ -13,6 +14,9 @@ pub use druid::{
     Lens,
     Env, 
     LocalizedString,
+    Point,
+    Size,
+    Vec2,
     widget::{
-        Split, Container, Flex
+        Split, Container, Flex, Scroll
 }};

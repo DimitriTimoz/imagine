@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::InterpolationMode, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Size, Point, Vec2};
+use druid::{piet::InterpolationMode, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx};
 use ::image::open;
 
 use crate::prelude::*;
