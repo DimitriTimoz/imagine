@@ -2,6 +2,7 @@ pub mod ui;
 pub mod prelude;
 pub mod image;
 pub mod delegate;
+pub mod dialog;
 
 use std::sync::Arc;
 
@@ -23,6 +24,7 @@ fn main() {
     let main_window = WindowDesc::new(ui::build_ui())
         .window_size((1200.0, 800.0))
         .menu(ui::make_menu)
+        
         //  .transparent(true)
         .title("Imagine");
     let initial_data = AppState {
