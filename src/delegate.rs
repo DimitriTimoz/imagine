@@ -7,7 +7,7 @@ pub struct Delegate;
 impl AppDelegate<AppState> for Delegate {
     fn command(
         &mut self,
-        ctx: &mut DelegateCtx,
+        _ctx: &mut DelegateCtx,
         _target: Target,
         cmd: &Command,
         data: &mut AppState,
@@ -26,8 +26,8 @@ impl AppDelegate<AppState> for Delegate {
             ctx: &mut DelegateCtx,
             window_id: WindowId,
             event: Event,
-            data: &mut AppState,
-            env: &Env,
+            _data: &mut AppState,
+            _env: &Env,
         ) -> Option<Event> {
             match event {
                 Event::WindowConnected => {

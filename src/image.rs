@@ -1,4 +1,4 @@
-use std::{path::Path, io::Seek};
+use std::path::Path;
 
 use druid::{piet::InterpolationMode, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx};
 use ::image::open;
@@ -29,6 +29,7 @@ impl Default for ImageState {
 }
 
 impl ImageState {
+    /// Change the image and reset the zoom
     pub fn change_image(&mut self, path: &str, window_size: Size) {
         self.image_buf = load_and_convert_image(path);
         self.path = path.to_string();
@@ -40,13 +41,16 @@ impl ImageState {
         self.zoom = zoom_x.min(zoom_y);
         self.center = Point::new(0.0, 0.0);
         self.min_zoom = self.zoom / 5.0;
-        
     }
 
+    /// Get the rect of the image in the window (with the current zoom)
     pub fn get_rect(&self) -> druid::Rect {
         self.image_buf.size().to_rect().scale_from_origin(self.zoom)
     }
 
+    /// Add a zoom delta to the current zoom
+    /// Zoom is clamped between min_zoom and infinity
+    /// TODO: Zoom is centered on the mouse position
     pub fn add_zoom(&mut self, zoom_delta: f64, ctx: &mut EventCtx) {
         if self.zoom + zoom_delta < self.min_zoom {
             return;
@@ -95,14 +99,14 @@ impl Widget<ImageState> for ImageWidget {
         }
     }
 
-    fn layout(&mut self, lay: &mut LayoutCtx, bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {
+    fn layout(&mut self, _lay: &mut LayoutCtx, bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {
         // Max of parent size
         // WARNING: The parent is a Scroll widget, so the parent size is infinite
         bc.constrain(data.get_rect().size())
         
     }
     
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, _env: &Env) {
         let raw_image_data = data.image_buf.raw_pixels();
         let image = ctx.make_image(data.image_buf.width(), data.image_buf.height(), raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
 
@@ -110,7 +114,7 @@ impl Widget<ImageState> for ImageWidget {
         ctx.draw_image(&image, image_rect, InterpolationMode::Bilinear);
     }
 
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut ImageState, env: &Env) {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut ImageState, _env: &Env) {
         match event {
             Event::Zoom(zoom) => {
                 // TODO: zoom to mouse position
