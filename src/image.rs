@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, io::Seek};
 
 use druid::{piet::InterpolationMode, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx};
 use ::image::open;
@@ -8,6 +8,7 @@ use crate::prelude::*;
 #[derive(Clone, Data, Lens)]
 pub struct ImageState {
     pub zoom: f64,
+    pub min_zoom: f64,
     pub center: Point,
     pub image_buf: ImageBuf,
     pub mouse_pos: Vec2,
@@ -22,6 +23,7 @@ impl Default for ImageState {
             mouse_pos: Vec2::new(0.0, 0.0),
             image_buf: ImageBuf::empty(),
             path: String::new(),
+            min_zoom: 0.2,
         }
     }
 }
@@ -37,6 +39,8 @@ impl ImageState {
         let zoom_y = window_size.height / image_rect.height();
         self.zoom = zoom_x.min(zoom_y);
         self.center = Point::new(0.0, 0.0);
+        self.min_zoom = self.zoom / 5.0;
+        
     }
 
     pub fn get_rect(&self) -> druid::Rect {
@@ -44,6 +48,9 @@ impl ImageState {
     }
 
     pub fn add_zoom(&mut self, zoom_delta: f64, ctx: &mut EventCtx) {
+        if self.zoom + zoom_delta < self.min_zoom {
+            return;
+        }
         self.zoom += zoom_delta;
         let parent_size = ctx.size();
         let image_rect = self.get_rect();
@@ -103,7 +110,7 @@ impl Widget<ImageState> for ImageWidget {
         ctx.draw_image(&image, image_rect, InterpolationMode::Bilinear);
     }
 
-    fn event(&mut self, ctx: &mut druid::widget::prelude::EventCtx, event: &druid::widget::prelude::Event, data: &mut ImageState, env: &Env) {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut ImageState, env: &Env) {
         match event {
             Event::Zoom(zoom) => {
                 // TODO: zoom to mouse position
