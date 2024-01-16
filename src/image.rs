@@ -74,9 +74,9 @@ impl ImageStateTrait for ImageState {
         } else {
             // Zoom to mouse position gradually
             // Compute mouse position on image
-            let pos = self.mouse_pos;
+            let pos = self.mouse_pos * self.zoom;
             let pos = pos ;
-            //self.center += pos;
+            self.center = image_rect.center();
             println!("Mouse pos: {:?}", pos);
         }
         
