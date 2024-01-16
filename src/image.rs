@@ -49,7 +49,7 @@ impl ImageStateTrait for ImageState {
         let zoom_x = window_size.width / image_rect.width();
         let zoom_y = window_size.height / image_rect.height();
         self.zoom = zoom_x.min(zoom_y);
-        self.center = Point::new(0.0, 0.0);
+        self.center = image_rect.center();
         self.min_zoom = self.zoom / 5.0;
     }
 
@@ -70,15 +70,17 @@ impl ImageStateTrait for ImageState {
         let image_rect = self.get_rect();
         if parent_size.width > image_rect.width() && parent_size.height > image_rect.height() {
             // Center image
-            self.center = Point::new(0.0, 0.0);
+            self.center = image_rect.center();
         } else {
-            // Zoom to mouse position
-            let mouse_pos = self.mouse_pos;
-            let mouse_pos = mouse_pos - Point::new(image_rect.width() / 2.0, image_rect.height() / 2.0).to_vec2();
-            let mouse_pos = mouse_pos / self.zoom;
-            let mouse_pos = mouse_pos * (self.zoom - zoom_delta);
-            self.center += mouse_pos * 0.01;
+            // Zoom to mouse position gradually
+            // Compute mouse position on image
+            let pos = self.mouse_pos;
+            let pos = pos ;
+            //self.center += pos;
+            println!("Mouse pos: {:?}", pos);
         }
+        
+
         ctx.request_layout();
         ctx.request_paint();
     }
@@ -88,7 +90,7 @@ impl ImageStateTrait for ImageState {
         let image_rect = self.get_rect();
         if parent_size.width > image_rect.width() && parent_size.height > image_rect.height() {
             // Center image
-            self.center = Point::new(0.0, 0.0);
+            self.center = image_rect.center();
             return;
         } 
         self.center += delta * self.zoom;
@@ -185,7 +187,11 @@ where
         match event {
             Event::Zoom(zoom_delta) => {
                 data.add_zoom(*zoom_delta, ctx);
-                
+                // TODO: Scroll to mouse position
+                let scroll_to = data.get_center();
+                println!("Scroll to: {:?}", scroll_to);
+                let scroll_to = Rect::from_origin_size(scroll_to, Size::new(0.0, 0.0));
+                self.inner.scroll_to(ctx, scroll_to);
             },
             
             Event::MouseMove(mouse_event) => {
