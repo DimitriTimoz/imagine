@@ -2,6 +2,8 @@ use druid::{AppDelegate, DelegateCtx, Command, Target, Env, commands, Handled};
 
 use crate::{prelude::*, dialog::open_image_dialog};
 
+use self::image::ImageStateTrait;
+
 pub struct Delegate;
 
 impl AppDelegate<AppState> for Delegate {
