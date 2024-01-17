@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::InterpolationMode, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Rect, widget::Controller, Selector};
+use druid::{piet::{InterpolationMode, CoreGraphicsImage}, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Rect, widget::{Controller, Axis}, Selector};
 use ::image::open;
 
 use crate::prelude::*;
@@ -9,7 +9,7 @@ use crate::prelude::*;
 pub struct ImageState {
     pub zoom: f64,
     pub min_zoom: f64,
-    pub center: Point,
+    pub center: Vec2,
     pub image_buf: ImageBuf,
     pub mouse_pos: Vec2,
     pub path: String,
@@ -19,7 +19,7 @@ impl Default for ImageState {
     fn default() -> Self {
         Self {
             zoom: 1.0,
-            center: Point::new(0.0, 0.0),
+            center: Vec2::new(0.0, 0.0),
             mouse_pos: Vec2::new(0.0, 0.0),
             image_buf: ImageBuf::empty(),
             path: String::new(),
@@ -30,11 +30,11 @@ impl Default for ImageState {
 
 pub trait ImageStateTrait {
     fn add_zoom(&mut self, zoom_delta: f64, ctx: &mut EventCtx);
-    fn move_image(&mut self, delta: Vec2, ctx: &mut EventCtx);
     fn change_image(&mut self, path: &str, window_size: Size);
     fn get_rect(&self) -> druid::Rect;
     fn set_mouse_pos(&mut self, mouse_pos: Vec2);
-    fn get_center(&self) -> Point;
+    fn get_center(&self) -> Vec2;
+    fn set_center(&mut self, center: Vec2);
 }
 
 
@@ -49,7 +49,7 @@ impl ImageStateTrait for ImageState {
         let zoom_x = window_size.width / image_rect.width();
         let zoom_y = window_size.height / image_rect.height();
         self.zoom = zoom_x.min(zoom_y);
-        self.center = image_rect.center();
+        self.center = image_rect.center().to_vec2();
         self.min_zoom = self.zoom / 5.0;
     }
 
@@ -65,35 +65,22 @@ impl ImageStateTrait for ImageState {
         if self.zoom + zoom_delta < self.min_zoom {
             return;
         }
+        let old_image_rect = self.get_rect();
         self.zoom += zoom_delta;
         let parent_size = ctx.size();
         let image_rect = self.get_rect();
-        if parent_size.width > image_rect.width() && parent_size.height > image_rect.height() {
+        if parent_size.width >= image_rect.width() && parent_size.height >= image_rect.height() {
             // Center image
-            self.center = image_rect.center();
+            self.center = image_rect.center().to_vec2();
         } else {
-            // Zoom to mouse position gradually
-            // Compute mouse position on image
-            let pos = self.mouse_pos * self.zoom;
-            let pos = pos ;
-            self.center = image_rect.center();
-            println!("Mouse pos: {:?}", pos);
+            // Add the half of the new size to the center
+            let new_size = (image_rect.size() - old_image_rect.size()) / 2.0;
+            self.center += new_size.to_vec2();
+            println!("Center: {:?}", self.center);
+
         }
-        
 
         ctx.request_layout();
-        ctx.request_paint();
-    }
-
-    fn move_image(&mut self, delta: Vec2, ctx: &mut EventCtx) {
-        let parent_size = ctx.size();
-        let image_rect = self.get_rect();
-        if parent_size.width > image_rect.width() && parent_size.height > image_rect.height() {
-            // Center image
-            self.center = image_rect.center();
-            return;
-        } 
-        self.center += delta * self.zoom;
         ctx.request_paint();
     }
 
@@ -101,17 +88,32 @@ impl ImageStateTrait for ImageState {
         self.mouse_pos = mouse_pos;
     }
 
-    fn get_center(&self) -> Point {
+    fn get_center(&self) -> Vec2 {
         self.center
     }
+
+    fn set_center(&mut self, center: Vec2) {
+        self.center = center;
+    }
 }
-pub struct ImageWidget;
+pub struct ImageWidget {
+    cached_image: Option<CoreGraphicsImage>,
+}
+
+impl ImageWidget {
+    pub fn new() -> Self {
+        Self {
+            cached_image: None,
+        }
+    }
+}
 
 impl Widget<ImageState> for ImageWidget {
     fn lifecycle(&mut self, _: &mut LifeCycleCtx, _: &LifeCycle, _: &ImageState, _: &Env) {}
 
     fn update(&mut self, ctx: &mut UpdateCtx, prev_data: &ImageState, new_data: &ImageState, _: &Env) {
         if prev_data.path != new_data.path {   
+            self.cached_image = None;
             ctx.request_paint();
             ctx.request_layout();
         }
@@ -132,7 +134,13 @@ impl Widget<ImageState> for ImageWidget {
     
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, _env: &Env) {
         let raw_image_data = data.image_buf.raw_pixels();
-        let image = ctx.make_image(data.image_buf.width(), data.image_buf.height(), raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
+        let image = if let Some(image) = &self.cached_image {
+            image.clone()
+        } else {
+            let image = ctx.make_image(data.image_buf.width(), data.image_buf.height(), raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
+            self.cached_image = Some(image.clone());
+            image.clone()
+        };
 
         let image_rect = data.get_rect();
     
@@ -141,13 +149,7 @@ impl Widget<ImageState> for ImageWidget {
     }
 
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut ImageState, _env: &Env) {
-        /*match event {
-            Event::Wheel(wheel_event) => {
-                data.move_image(wheel_event.wheel_delta, ctx);
-            },
-            _ => {}
-        }*/
-        
+    
     }
 }
 
@@ -183,26 +185,32 @@ where
     W: Widget<T>,
 {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
-        self.inner.event(ctx, event, data, env);
+        
         match event {
             Event::Zoom(zoom_delta) => {
                 data.add_zoom(*zoom_delta, ctx);
-                // TODO: Scroll to mouse position
-                let scroll_to = data.get_center();
-                println!("Scroll to: {:?}", scroll_to);
-                let scroll_to = Rect::from_origin_size(scroll_to, Size::new(0.0, 0.0));
-                self.inner.scroll_to(ctx, scroll_to);
-            },
-            
+                let mut scroll_to = data.get_center();
+                scroll_to -= ctx.size().to_vec2() / 2.0;
+                self.inner.scroll_to_on_axis(ctx, Axis::Horizontal, scroll_to.x);
+                self.inner.scroll_to_on_axis(ctx, Axis::Vertical, scroll_to.y);
+                self.inner.event(ctx, event, data, env);
+            },            
             Event::MouseMove(mouse_event) => {
                 data.set_mouse_pos(mouse_event.pos.to_vec2());
-                
+                self.inner.event(ctx, event, data, env);
             },
             _ => {
-                
+                self.inner.event(ctx, event, data, env);
             }
         
         }
+        // Update the center of the image if the scroll position changed
+        let scroll_pos = self.inner.offset();
+        let view_rect = self.inner.viewport_rect().size().to_vec2();
+        let new_center = scroll_pos + view_rect / 2.0;
+        println!("New center: {:?}", new_center);
+        data.set_center(new_center);
+
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
