@@ -73,11 +73,16 @@ impl ImageStateTrait for ImageState {
             // Center image
             self.center = image_rect.center().to_vec2();
         } else {
-            // Add the half of the new size to the center
-            let new_size = (image_rect.size() - old_image_rect.size()) / 2.0;
-            self.center += new_size.to_vec2();
+            // Mouse position in image coordinates
+            let top_left = self.center - parent_size.to_vec2() / 2.0;
+            let mouse_pos = top_left + self.mouse_pos;
+            
+            println!("Top left: {:?}", top_left);
+            println!("Mouse pos: {:?}", mouse_pos);
             println!("Center: {:?}", self.center);
-
+            let zoom_ratio = self.zoom / (self.zoom - zoom_delta);
+            self.center *= zoom_ratio;
+            //self.center += (mouse_pos - self.center) * zoom_ratio;
         }
 
         ctx.request_layout();
@@ -208,7 +213,6 @@ where
         let scroll_pos = self.inner.offset();
         let view_rect = self.inner.viewport_rect().size().to_vec2();
         let new_center = scroll_pos + view_rect / 2.0;
-        println!("New center: {:?}", new_center);
         data.set_center(new_center);
 
     }
