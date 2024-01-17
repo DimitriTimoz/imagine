@@ -2,14 +2,13 @@ use druid::{WidgetExt, Menu, WindowId, MenuItem, commands};
 
 use crate::{prelude::*, AppState, dialog::open_image_dialog};
 
-use self::image::ImageView;
+use self::{image::ImageView, background::CustomBackgroundWidget};
 
 pub fn build_ui() -> impl Widget<AppState> {
-
+    CustomBackgroundWidget::new(
     ImageView::new(image::ImageWidget {})
-        .background(Color::from_rgba32_u32(0xFF0000FF))
-        .lens(AppState::image_state)
-
+            .lens(AppState::image_state)
+    )
 }
 
 #[allow(unused_assignments)]
