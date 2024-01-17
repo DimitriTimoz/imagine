@@ -16,7 +16,6 @@ use prelude::*;
 pub struct AppState {
     pub image_state: image::ImageState,
     pub text: Arc<String>,
-    pub window_size: Size,
 }
 
 
@@ -28,10 +27,10 @@ fn main() {
         .menu(ui::make_menu)
         .transparent(true)
         .title("Imagine");
+
     let initial_data = AppState {
         image_state: image::ImageState::default(),
         text: Arc::new("Hello World!".to_string()),
-        window_size: Size::new(1200.0, 800.0),
     };
     
 
