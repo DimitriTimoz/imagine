@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, CoreGraphicsImage}, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Rect, widget::{Controller, Axis}, Selector, UnitPoint, Affine};
+use druid::{piet::{InterpolationMode, CoreGraphicsImage}, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, widget::Axis, Affine};
 use ::image::open;
 
 use crate::prelude::*;
@@ -127,7 +127,7 @@ impl Widget<ImageState> for ImageWidget {
         }
     }
         
-    fn layout(&mut self, _lay: &mut LayoutCtx, bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {                
+    fn layout(&mut self, _lay: &mut LayoutCtx, _bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {                
         let image_rect = data.get_rect();
         image_rect.size()
     }
@@ -147,7 +147,7 @@ impl Widget<ImageState> for ImageWidget {
         ctx.draw_image(&image, image_rect, InterpolationMode::Bilinear);
     }
 
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut ImageState, _env: &Env) {
+    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut ImageState, _env: &Env) {
     
     }
 }
