@@ -34,8 +34,9 @@ impl AppDelegate<AppState> for Delegate {
             match event {
                 Event::WindowConnected => {
                     // Hide the window until we have an image
-                    ctx.submit_command(commands::HIDE_WINDOW.to(window_id));
+                    //ctx.submit_command(commands::HIDE_WINDOW.to(window_id));
                     ctx.submit_command(commands::SHOW_OPEN_PANEL.with(open_image_dialog()).to(window_id));
+                    ctx.submit_command(commands::HIDE_WINDOW.to(window_id));
                     Some(event)
                 }
                 _ => Some(event),

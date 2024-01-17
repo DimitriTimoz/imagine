@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, CoreGraphicsImage}, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Rect, widget::{Controller, Axis}, Selector};
+use druid::{piet::{InterpolationMode, CoreGraphicsImage}, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, Rect, widget::{Controller, Axis}, Selector, UnitPoint, Affine};
 use ::image::open;
 
 use crate::prelude::*;
@@ -126,14 +126,10 @@ impl Widget<ImageState> for ImageWidget {
             ctx.request_layout();
         }
     }
-
-    fn layout(&mut self, _lay: &mut LayoutCtx, bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {
-        // Max of parent size
-        // WARNING: The parent is a Scroll widget, so the parent size is infinite
         
+    fn layout(&mut self, _lay: &mut LayoutCtx, bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {                
         let image_rect = data.get_rect();
         image_rect.size()
-            
     }
     
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, _env: &Env) {
@@ -145,7 +141,6 @@ impl Widget<ImageState> for ImageWidget {
             self.cached_image = Some(image.clone());
             image.clone()
         };
-
         let image_rect = data.get_rect();
     
         // TODO: Add margin to image rect
@@ -189,7 +184,6 @@ where
     W: Widget<T>,
 {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
-        
         match event {
             Event::Zoom(zoom_delta) => {
                 data.add_zoom(*zoom_delta, ctx);
@@ -217,7 +211,6 @@ where
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
-
         self.inner.lifecycle(ctx, event, data, env);
     }
 
@@ -244,69 +237,16 @@ where
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
-        self.inner.paint(ctx, data, env);
-    }
-
-    
-}
-
-/*
-impl<T, W: Widget<T>> Widget<T> for MyCustomScroll<W> {
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
-        match event {
-            LifeCycle::WidgetAdded => {
-                // Set initial scroll position
-                self.inner.scroll_to(data.scroll_position);
-            },
-            _ => (),
-        }
-
-        self.inner.lifecycle(ctx, event, data, env);
-    }
-
-    // Implement other required methods...
-}
-
-pub struct ImageViewController {
-    scroll_widget_id: WidgetId,
-}
-
-impl ImageViewController {
-    pub fn new(scroll_widget_id: WidgetId) -> Self {
-        Self { scroll_widget_id }
-    }
-
-    fn scroll_to_position(&self, ctx: &mut EventCtx, position: Vec2) {
-       ctx.submit_command(SCROLL_TO.with(position).to(self.scroll_widget_id));
+        // Draw inner widget centered in the viewport
+        let image_rect = data.get_rect();
+        let viewport_rect = self.inner.viewport_rect();
+        
+        ctx.with_save(|ctx| {
+            if image_rect.width() < viewport_rect.width() && image_rect.height() < viewport_rect.height() {
+                let offset = (viewport_rect.size() - image_rect.size()) / 2.0;
+                ctx.transform(Affine::translate(offset.to_vec2()));
+            }
+            self.inner.paint(ctx, data, env);
+        });
     }
 }
-
-impl<W: Widget<ImageState>> Controller<ImageState, W> for ImageViewController {
-    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut ImageState, env: &Env) {
-       match event {
-        Event::Zoom(zoom_delta) => {
-            data.add_zoom(*zoom_delta, ctx);
-
-            self.scroll_to_position(ctx, Vec2::new(0.0, 100.0));
-            
-        },
-        Event::Command(cmd) if cmd.is(SCROLL_TO) => {
-            let position = *cmd.get_unchecked(SCROLL_TO);
-            // Implement the logic to scroll to the specified position
-            
-        },
-
-        Event::MouseMove(mouse_event) => {
-            data.mouse_pos = mouse_event.pos.to_vec2();
-        },
-        _ => {
-            child.event(ctx, event, data, env);
-        }
-       
-       }
-    }
-
-    // You can also override other methods like lifecycle, update, etc., as needed
-}
-
- */
