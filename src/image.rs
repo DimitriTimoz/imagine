@@ -65,7 +65,6 @@ impl ImageStateTrait for ImageState {
         if self.zoom + zoom_delta < self.min_zoom {
             return;
         }
-        let old_image_rect = self.get_rect();
         self.zoom += zoom_delta;
         let parent_size = ctx.size();
         let image_rect = self.get_rect();
@@ -75,14 +74,14 @@ impl ImageStateTrait for ImageState {
         } else {
             // Mouse position in image coordinates
             let top_left = self.center - parent_size.to_vec2() / 2.0;
-            let mouse_pos = top_left + self.mouse_pos;
-            
-            println!("Top left: {:?}", top_left);
-            println!("Mouse pos: {:?}", mouse_pos);
-            println!("Center: {:?}", self.center);
             let zoom_ratio = self.zoom / (self.zoom - zoom_delta);
+
+            let mouse_pos = (top_left + self.mouse_pos) * zoom_ratio;
+            
             self.center *= zoom_ratio;
-            //self.center += (mouse_pos - self.center) * zoom_ratio;
+
+            let zoom_ratio = zoom_delta / (self.zoom - zoom_delta);
+            self.center += (mouse_pos - self.center) * zoom_ratio;
         }
 
         ctx.request_layout();
