@@ -60,7 +60,7 @@ impl ImageStateTrait for ImageState {
 
     /// Add a zoom delta to the current zoom
     /// Zoom is clamped between min_zoom and infinity
-    /// TODO: Zoom is centered on the mouse position
+    /// Zoom is centered on the mouse position
     fn add_zoom(&mut self, zoom_delta: f64, ctx: &mut EventCtx) {
         if self.zoom + zoom_delta < self.min_zoom {
             return;
