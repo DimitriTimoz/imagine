@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, CoreGraphicsImage}, RenderContext, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, PaintCtx, widget::Axis, Affine};
+use druid::{piet::{InterpolationMode, CoreGraphicsImage}, LifeCycleCtx, LifeCycle, widget::Axis, Affine};
 use ::image::open;
 
 use crate::prelude::*;
@@ -100,16 +100,10 @@ impl ImageStateTrait for ImageState {
         self.center = center;
     }
 }
+
+#[derive(Default)]
 pub struct ImageWidget {
     cached_image: Option<CoreGraphicsImage>,
-}
-
-impl ImageWidget {
-    pub fn new() -> Self {
-        Self {
-            cached_image: None,
-        }
-    }
 }
 
 impl Widget<ImageState> for ImageWidget {
@@ -143,7 +137,6 @@ impl Widget<ImageState> for ImageWidget {
             let cached_img = ctx.make_image(image_size.width as usize, image_size.height as usize, raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
             ctx.draw_image(&cached_img, image_rect, InterpolationMode::Bilinear);
             self.cached_image = Some(cached_img);
-
         }
     
         // TODO: Add margin to image rect
@@ -189,6 +182,8 @@ where
         match event {
             Event::Zoom(zoom_delta) => {
                 data.add_zoom(*zoom_delta, ctx);
+
+                // Scroll to keep the mouse position in the same place
                 let mut scroll_to = data.get_center();
                 scroll_to -= ctx.size().to_vec2() / 2.0;
                 self.inner.scroll_to_on_axis(ctx, Axis::Horizontal, scroll_to.x);
@@ -209,7 +204,6 @@ where
         let view_rect = self.inner.viewport_rect().size().to_vec2();
         let new_center = scroll_pos + view_rect / 2.0;
         data.set_center(new_center);
-
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {

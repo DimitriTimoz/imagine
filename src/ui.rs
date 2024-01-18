@@ -1,4 +1,4 @@
-use druid::{WidgetExt, Menu, WindowId, MenuItem, commands};
+use druid::{WidgetExt, Menu, MenuItem};
 
 use crate::{prelude::*, AppState, dialog::open_image_dialog};
 
@@ -6,7 +6,7 @@ use self::{image::ImageView, background::CustomBackgroundWidget};
 
 pub fn build_ui() -> impl Widget<AppState> {
     CustomBackgroundWidget::new(
-    ImageView::new(image::ImageWidget::new()).expand()
+    ImageView::new(image::ImageWidget::default()).expand()
             .lens(AppState::image_state)
     )
 }
