@@ -35,7 +35,7 @@ fn main() {
     
 
     AppLauncher::with_window(main_window)
-        .delegate(Delegate)
+        .delegate(Delegate::default())
         .log_to_console()
         .launch(initial_data)
         .expect("Failed to launch application");

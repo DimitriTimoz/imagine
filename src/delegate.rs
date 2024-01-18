@@ -4,7 +4,17 @@ use crate::{prelude::*, dialog::open_image_dialog};
 
 use self::image::ImageStateTrait;
 
-pub struct Delegate;
+pub struct Delegate {
+    window_size: Size,
+}
+
+impl Default for Delegate {
+    fn default() -> Self {
+        Self {
+            window_size: Size::new(1.0, 1.0),
+        }
+    }
+}
 
 impl AppDelegate<AppState> for Delegate {
     fn command(
@@ -16,7 +26,8 @@ impl AppDelegate<AppState> for Delegate {
         _env: &Env,
     ) -> Handled {
         if let Some(file_info) = cmd.get(commands::OPEN_FILE) {
-            data.image_state.change_image(file_info.path().to_str().unwrap(), Size::new(1200.0, 800.0));
+            // Get the window size
+            data.image_state.change_image(file_info.path().to_str().unwrap(), self.window_size);
             // Show the window now that we have an image
             return Handled::Yes;
         } 
@@ -38,7 +49,11 @@ impl AppDelegate<AppState> for Delegate {
                     ctx.submit_command(commands::SHOW_OPEN_PANEL.with(open_image_dialog()).to(window_id));
                     ctx.submit_command(commands::HIDE_WINDOW.to(window_id));
                     Some(event)
-                }
+                },
+                Event::WindowSize(size) => {
+                    self.window_size = size;
+                    Some(event)
+                },
                 _ => Some(event),
             }
             

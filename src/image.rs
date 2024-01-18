@@ -242,9 +242,15 @@ where
         let viewport_rect = self.inner.viewport_rect();
         
         ctx.with_save(|ctx| {
-            if image_rect.width() < viewport_rect.width() && image_rect.height() < viewport_rect.height() {
-                let offset = (viewport_rect.size() - image_rect.size()) / 2.0;
-                ctx.transform(Affine::translate(offset.to_vec2()));
+            // Center the non overflowing axis
+            if image_rect.width() < viewport_rect.width() {
+                let offset = (viewport_rect.width() - image_rect.width()) / 2.0;
+                ctx.transform(Affine::translate((offset, 0.0)));
+            }
+
+            if image_rect.height() < viewport_rect.height() {
+                let offset = (viewport_rect.height() - image_rect.height()) / 2.0;
+                ctx.transform(Affine::translate((0.0, offset)));
             }
             self.inner.paint(ctx, data, env);
         });

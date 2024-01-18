@@ -27,8 +27,7 @@ impl<T: druid::Data, W: Widget<T>> Widget<T>  for CustomBackgroundWidget<T, W> {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
         // Dessiner l'arrière-plan
         let rect = ctx.size().to_rect();
-        // Blur
-        ctx.blurred_rect(rect, 10.0, &self.background_color);
+        ctx.fill(rect, &self.background_color);
 
         // Dessiner l'enfant au centre        
         self.child.paint(ctx, data, env);
