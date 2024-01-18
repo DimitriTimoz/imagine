@@ -133,18 +133,20 @@ impl Widget<ImageState> for ImageWidget {
     }
     
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, _env: &Env) {
-        let raw_image_data = data.image_buf.raw_pixels();
-        let image = if let Some(image) = &self.cached_image {
-            image.clone()
+        if let Some(cached_img) = self.cached_image.as_ref()  {
+            let image_rect = data.get_rect();
+            ctx.draw_image(cached_img, image_rect, InterpolationMode::Bilinear);
         } else {
-            let image = ctx.make_image(data.image_buf.width(), data.image_buf.height(), raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
-            self.cached_image = Some(image.clone());
-            image.clone()
-        };
-        let image_rect = data.get_rect();
+            let image_rect = data.get_rect();
+            let image_size = data.image_buf.size();
+            let raw_image_data = data.image_buf.raw_pixels();
+            let cached_img = ctx.make_image(image_size.width as usize, image_size.height as usize, raw_image_data, druid::piet::ImageFormat::RgbaSeparate).unwrap();
+            ctx.draw_image(&cached_img, image_rect, InterpolationMode::Bilinear);
+            self.cached_image = Some(cached_img);
+
+        }
     
         // TODO: Add margin to image rect
-        ctx.draw_image(&image, image_rect, InterpolationMode::Bilinear);
     }
 
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut ImageState, _env: &Env) {
