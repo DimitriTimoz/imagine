@@ -41,7 +41,7 @@ impl AppDelegate<AppState> for Delegate {
             ctx: &mut DelegateCtx,
             window_id: WindowId,
             event: Event,
-            data: &mut AppState,
+            _data: &mut AppState,
             _env: &Env,
         ) -> Option<Event> {
             match &event {

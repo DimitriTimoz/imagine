@@ -3,7 +3,7 @@ use druid::WidgetPod;
 use crate::prelude::*;
 
 pub struct CustomBackgroundWidget<T, W> {
-    // Propriétés pour l'arrière-plan (par exemple, une couleur ou une image)
+    // Background color
     background_color: druid::Color,
     child: WidgetPod<T, W>,
 }
@@ -15,7 +15,7 @@ impl<T: druid::Data, W: Widget<T>> CustomBackgroundWidget<T, W> {
             child: WidgetPod::new(child),
         }
     }
-    // Méthodes pour définir/modifier l'arrière-plan
+    
     pub fn background_color(mut self, color: druid::Color) -> Self {
         self.background_color = color;
         self
@@ -25,11 +25,9 @@ impl<T: druid::Data, W: Widget<T>> CustomBackgroundWidget<T, W> {
 
 impl<T: druid::Data, W: Widget<T>> Widget<T>  for CustomBackgroundWidget<T, W> {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
-        // Dessiner l'arrière-plan
         let rect = ctx.size().to_rect();
         ctx.fill(rect, &self.background_color);
 
-        // Dessiner l'enfant au centre        
         self.child.paint(ctx, data, env);
     }
 
@@ -53,7 +51,7 @@ impl<T: druid::Data, W: Widget<T>> Widget<T>  for CustomBackgroundWidget<T, W> {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
         let child_size = self.child.layout(ctx, &bc.loosen(), data, env);
-        let my_size = bc.constrain(child_size); // La taille de votre widget personnalisé
+        let my_size = bc.constrain(child_size); 
     
         let child_x = (my_size.width - child_size.width) / 2.0;
         let child_y = (my_size.height - child_size.height) / 2.0;
