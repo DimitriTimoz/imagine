@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, Text, TextLayoutBuilder}, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine};
+use druid::{piet::InterpolationMode, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine};
 use ::image::{open, ImageError};
 
 #[cfg(target_os = "macos")]
