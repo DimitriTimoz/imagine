@@ -206,7 +206,6 @@ where
         match event {
             Event::Zoom(zoom_delta) => {
                 data.add_zoom(*zoom_delta, ctx);
-
                 zoomed = true;
             },            
             Event::Command(cmd) => {
@@ -219,26 +218,24 @@ where
                     let zoom_delta = -wheel_event.wheel_delta.y * 0.001;
                     data.add_zoom(zoom_delta, ctx);
                     zoomed = true;
-                } else {
-                    self.inner.event(ctx, event, data, env);
                 }
             },
             Event::MouseMove(mouse_event) => {
                 data.set_mouse_pos(mouse_event.pos.to_vec2());
-                self.inner.event(ctx, event, data, env);
             },
             _ => {
-                self.inner.event(ctx, event, data, env);
             }
         }
         if zoomed {
             // Scroll to keep the mouse position in the same place
             let mut scroll_to: Vec2 = data.get_center();
             scroll_to -= ctx.size().to_vec2() / 2.0;
+
             self.inner.scroll_to_on_axis(ctx, Axis::Horizontal, scroll_to.x);
             self.inner.scroll_to_on_axis(ctx, Axis::Vertical, scroll_to.y);
-            self.inner.event(ctx, event, data, env);
             
+        } else {
+            self.inner.event(ctx, event, data, env);
         }
         // Update the center of the image if the scroll position changed
         let scroll_pos = self.inner.offset();
