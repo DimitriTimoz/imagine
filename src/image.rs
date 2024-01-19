@@ -1,7 +1,13 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, CairoImage, Text, TextLayoutBuilder}, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine};
+use druid::{piet::{InterpolationMode, Text, TextLayoutBuilder}, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine};
 use ::image::{open, ImageError};
+
+#[cfg(target_os = "macos")]
+use druid::piet::CoreGraphicsImage as CoreGraphicsImage;
+
+#[cfg(not(target_os = "macos"))]
+use druid::piet::CairoImage as CoreGraphicsImage;
 
 use crate::prelude::*;
 
@@ -105,7 +111,7 @@ impl ImageStateTrait for ImageState {
 
 #[derive(Default)]
 pub struct ImageWidget {
-    cached_image: Option<CairoImage>,
+    cached_image: Option<CoreGraphicsImage>,
     text: Vec<TextBox<String>>,
 }
 
