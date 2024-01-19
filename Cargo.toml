@@ -10,4 +10,4 @@ image = "0.24.8"
 
 [dependencies.druid]
 version = "0.8.3"
-features = ["im", "svg", "image"]
+features = ["im", "svg", "image", "gtk"]

@@ -1,8 +1,10 @@
-use druid::{AppDelegate, DelegateCtx, Command, Target, Env, commands, Handled};
+use druid::{AppDelegate, DelegateCtx, Command, Target, Env, commands, Handled, Selector, keyboard_types::Key};
 
 use crate::{prelude::*, dialog::open_image_dialog};
 
 use self::image::ImageStateTrait;
+
+pub const CTRL: Selector<bool> = Selector::new("custom.ctrl_pressed");
 
 pub struct Delegate {
     window_size: Size,
@@ -39,10 +41,10 @@ impl AppDelegate<AppState> for Delegate {
             ctx: &mut DelegateCtx,
             window_id: WindowId,
             event: Event,
-            _data: &mut AppState,
+            data: &mut AppState,
             _env: &Env,
         ) -> Option<Event> {
-            match event {
+            match &event {
                 Event::WindowConnected => {
                     // Hide the window until we have an image
                     //ctx.submit_command(commands::HIDE_WINDOW.to(window_id));
@@ -51,11 +53,20 @@ impl AppDelegate<AppState> for Delegate {
                     Some(event)
                 },
                 Event::WindowSize(size) => {
-                    self.window_size = size;
+                    self.window_size = *size;
                     Some(event)
+                },    
+                Event::KeyDown(key_event) if key_event.key == druid::keyboard_types::Key::Control => {
+                    ctx.submit_command(CTRL.with(true));
+                    None
+                },
+                Event::KeyUp(key_event) if key_event.key == druid::keyboard_types::Key::Control => {
+                    ctx.submit_command(CTRL.with(false));
+                    None
                 },
                 _ => Some(event),
             }
             
     }
+    
 }

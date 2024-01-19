@@ -1,9 +1,11 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, CoreGraphicsImage}, LifeCycleCtx, LifeCycle, widget::Axis, Affine};
+use druid::{piet::{InterpolationMode, CairoImage}, LifeCycleCtx, LifeCycle, widget::Axis, Affine};
 use ::image::open;
 
 use crate::prelude::*;
+
+use self::delegate::CTRL;
 
 #[derive(Clone, Data, Lens)]
 pub struct ImageState {
@@ -103,7 +105,7 @@ impl ImageStateTrait for ImageState {
 
 #[derive(Default)]
 pub struct ImageWidget {
-    cached_image: Option<CoreGraphicsImage>,
+    cached_image: Option<CairoImage>,
 }
 
 impl Widget<ImageState> for ImageWidget {
@@ -158,6 +160,7 @@ where
     W: Widget<T>,
 {
     inner: Scroll<T, W>,
+    ctrl_pressed: bool,
 }
 
 impl<T, W> ImageView<T, W>
@@ -168,6 +171,7 @@ where
     pub fn new(child: W) -> Self{
         Self {
             inner: Scroll::new(child).horizontal().vertical(),
+            ctrl_pressed: false,
         }
     }
 }
@@ -190,14 +194,27 @@ where
                 self.inner.scroll_to_on_axis(ctx, Axis::Vertical, scroll_to.y);
                 self.inner.event(ctx, event, data, env);
             },            
+            Event::Command(cmd) => {
+                if cmd.is(CTRL) {
+                    self.ctrl_pressed = *cmd.get_unchecked(CTRL);
+                }
+            },
+            Event::Wheel(wheel_event) => {
+                if self.ctrl_pressed {
+                    let zoom_delta = -wheel_event.wheel_delta.y * 0.001;
+                    data.add_zoom(zoom_delta, ctx);
+                } else {
+                    self.inner.event(ctx, event, data, env);
+                }
+            },
             Event::MouseMove(mouse_event) => {
+                println!("Mouse pos: {:?}", mouse_event.pos.to_vec2());
                 data.set_mouse_pos(mouse_event.pos.to_vec2());
                 self.inner.event(ctx, event, data, env);
             },
             _ => {
                 self.inner.event(ctx, event, data, env);
             }
-        
         }
         // Update the center of the image if the scroll position changed
         let scroll_pos = self.inner.offset();

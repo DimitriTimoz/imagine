@@ -18,7 +18,7 @@ pub fn make_menu(_: Option<WindowId>, _state: &AppState, _: &Env) -> Menu<AppSta
     base = Menu::new(LocalizedString::new(""))
         .entry(
             Menu::new(LocalizedString::new("common-menu-file-menu"))
-                .entry( MenuItem::new(LocalizedString::new("common-menu-file-open"))
+                .entry(MenuItem::new(LocalizedString::new("common-menu-file-open"))
                     .command(commands::SHOW_OPEN_PANEL.with(open_image_dialog()))
                 )
         );
