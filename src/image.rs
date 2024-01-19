@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, CairoImage}, LifeCycleCtx, LifeCycle, widget::Axis, Affine};
-use ::image::open;
+use druid::{piet::{InterpolationMode, CairoImage, Text, TextLayoutBuilder}, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine};
+use ::image::{open, ImageError};
 
 use crate::prelude::*;
 
@@ -106,6 +106,7 @@ impl ImageStateTrait for ImageState {
 #[derive(Default)]
 pub struct ImageWidget {
     cached_image: Option<CairoImage>,
+    text: Vec<TextBox<String>>,
 }
 
 impl Widget<ImageState> for ImageWidget {
@@ -140,7 +141,7 @@ impl Widget<ImageState> for ImageWidget {
             ctx.draw_image(&cached_img, image_rect, InterpolationMode::Bilinear);
             self.cached_image = Some(cached_img);
         }
-    
+        
         // TODO: Add margin to image rect
     }
 
@@ -150,8 +151,20 @@ impl Widget<ImageState> for ImageWidget {
 }
 
 pub fn load_and_convert_image(path: impl AsRef<Path>) -> ImageBuf {
-    let image = open(path).unwrap().to_rgba8();
+    let image = match open(path) {
+        Ok(image) => image.to_rgba8(),
+        Err(e) => {
+            match e {
+                ImageError::IoError(e) => eprintln!("Failed to open image: {}", e),
+                ImageError::Decoding(e) => eprintln!("Failed to decode image: {}", e),
+                _ => eprintln!("Failed to open image: {}", e),
+            };
+            return ImageBuf::empty();
+        }
+    };
+
     let size = (image.width() as usize, image.height() as usize);
+    // TODO: Check if the image has the correct format
     ImageBuf::from_raw(image.into_raw(), druid::piet::ImageFormat::RgbaSeparate, size.0, size.1)
 }
 pub struct ImageView<T, W>
