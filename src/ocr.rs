@@ -65,7 +65,7 @@ impl Ocr {
     pub fn get_text(path: impl AsRef<Path>) -> Self {
         let path = path.as_ref().to_str().unwrap();
         let output = Command::new("python3")
-            .arg("get_text.py")
+            .arg("python/get_text.py")
             .arg(path)
             .output()
             .expect("Échec de l'exécution du script Python");
