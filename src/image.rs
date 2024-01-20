@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, sync::Mutex};
 
 use druid::{piet::InterpolationMode, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine};
 use ::image::{open, ImageError};
@@ -11,7 +11,7 @@ use druid::piet::CairoImage as CoreGraphicsImage;
 
 use crate::prelude::*;
 
-use self::delegate::CTRL;
+use self::{delegate::CTRL, ocr::{Ocr, OcrTextBox}};
 
 #[derive(Clone, Data, Lens)]
 pub struct ImageState {
@@ -21,6 +21,7 @@ pub struct ImageState {
     pub image_buf: ImageBuf,
     pub mouse_pos: Vec2,
     pub path: String,
+    pub text_boxes: Arc<Mutex<Option<Vec<OcrTextBox>>>>,
 }
 
 impl Default for ImageState {
@@ -32,6 +33,7 @@ impl Default for ImageState {
             image_buf: ImageBuf::empty(),
             path: String::new(),
             min_zoom: 0.2,
+            text_boxes: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -59,6 +61,14 @@ impl ImageStateTrait for ImageState {
         self.zoom = zoom_x.min(zoom_y);
         self.center = image_rect.center().to_vec2();
         self.min_zoom = self.zoom / 5.0;
+
+        // Call asynchroneously the ocr
+        let path = path.to_string();
+        let ocr_result = Arc::clone(&self.text_boxes);
+        std::thread::spawn(move || {
+            let ocr = Ocr::get_text(path);
+            *ocr_result.lock().unwrap() = Some(ocr.content);
+        });
     }
 
     /// Get the rect of the image in the window (with the current zoom)
@@ -168,6 +178,7 @@ pub fn load_and_convert_image(path: impl AsRef<Path>) -> ImageBuf {
             return ImageBuf::empty();
         }
     };
+
 
     let size = (image.width() as usize, image.height() as usize);
     // TODO: Check if the image has the correct format

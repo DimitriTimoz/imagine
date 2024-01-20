@@ -5,8 +5,8 @@ pub mod delegate;
 pub mod dialog;
 pub mod background;
 pub mod colors;
+pub mod ocr;
 
-use std::sync::Arc;
 
 use delegate::Delegate;
 

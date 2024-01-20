@@ -1,10 +1,6 @@
-pub use crate::ui;
-pub use crate::image;
-pub use crate::AppState;
-pub use crate::delegate;
-pub use crate::dialog;
-pub use crate::background;
-pub use crate::colors;
+pub use std::sync::Arc;
+
+pub use crate::{ui, image, AppState, delegate, dialog, background, colors, ocr};
 
 pub use druid::widget::prelude::*;
 pub use druid::{
@@ -27,3 +23,4 @@ pub use druid::{
     },
     commands,
 };
+
