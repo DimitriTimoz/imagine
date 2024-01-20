@@ -6,8 +6,10 @@ use self::{image::ImageView, background::CustomBackgroundWidget};
 
 pub fn build_ui() -> impl Widget<AppState> {
     CustomBackgroundWidget::new(
-    ImageView::new(image::ImageWidget::default()).expand()
-            .lens(AppState::image_state)
+    ImageView::new(
+            image::ImageWidget::default()
+        ).expand()
+        .lens(AppState::image_state)
     )
 }
 

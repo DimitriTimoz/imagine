@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, Text}, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine, Target, Rect};
+use druid::{piet::{InterpolationMode, Text}, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox, SizedBox, Padding, BackgroundBrush}, Affine, Target, Rect, im::Vector, LensExt};
 use ::image::{open, ImageError};
 
 #[cfg(target_os = "macos")]
@@ -13,14 +13,17 @@ use crate::prelude::*;
 
 use self::{delegate::{CTRL, SEND_OCR, RESET_OCR}, ocr::Ocr};
 
+
+
 #[derive(Clone, Data, Lens)]
 pub struct ImageState {
     pub zoom: f64,
     pub min_zoom: f64,
     pub center: Vec2,
-    pub image_buf: ImageBuf,
+    pub image_buf: Arc<ImageBuf>,
     pub mouse_pos: Vec2,
     pub path: String,
+    //pub recognized_list: Vector<String>
 }
 
 impl Default for ImageState {
@@ -29,7 +32,7 @@ impl Default for ImageState {
             zoom: 1.0,
             center: Vec2::new(0.0, 0.0),
             mouse_pos: Vec2::new(0.0, 0.0),
-            image_buf: ImageBuf::empty(),
+            image_buf: Arc::new(ImageBuf::empty()),
             path: String::new(),
             min_zoom: 0.2,
         }
@@ -49,7 +52,7 @@ pub trait ImageStateTrait {
 impl ImageStateTrait for ImageState {
     /// Change the image and reset the zoom
     fn change_image(&mut self, path: &str, window_size: Size, handle: druid::ExtEventSink) {
-        self.image_buf = load_and_convert_image(path);
+        self.image_buf = Arc::new(load_and_convert_image(path));
         self.path = path.to_string();
         
         let image_rect = self.image_buf.size().to_rect();
@@ -100,8 +103,6 @@ impl ImageStateTrait for ImageState {
             self.center += (mouse_pos - self.center) * zoom_ratio;
         }
 
-        ctx.request_layout();
-        ctx.request_paint();
     }
 
     fn set_mouse_pos(&mut self, mouse_pos: Vec2) {
@@ -117,15 +118,36 @@ impl ImageStateTrait for ImageState {
     }
 }
 
-#[derive(Default)]
+type TextField = String;
+
+#[derive(Clone, Data, Lens)]
+struct OcrText {
+    text_fields: Vector<TextField>,
+}
 pub struct ImageWidget {
     cached_image: Option<CoreGraphicsImage>,
-    ocr: Option<Ocr>,
-    recognized_text: Vec<TextBox<String>>
+    text_boxes: Vec<Container<String>>,
+}
+
+impl Default for ImageWidget {
+    fn default() -> Self {
+        let text_box = TextBox::<String>::new().with_text_color(Color::TRANSPARENT)
+        
+        .background(BackgroundBrush::Color(Color::RED))
+        ;
+        Self { 
+            cached_image: None,
+            text_boxes: vec![text_box],
+        }
+    }
 }
 
 impl Widget<ImageState> for ImageWidget {
-    fn lifecycle(&mut self, _: &mut LifeCycleCtx, _: &LifeCycle, _: &ImageState, _: &Env) {}
+    fn lifecycle(&mut self, lc_ctx: &mut LifeCycleCtx, lc: &LifeCycle, data: &ImageState, env: &Env) {
+        for text_box in &mut self.text_boxes {
+            text_box.lifecycle(lc_ctx, lc, &"pomme".to_string(), env);
+        }
+    }
 
     fn update(&mut self, ctx: &mut UpdateCtx, prev_data: &ImageState, new_data: &ImageState, _: &Env) {
         if prev_data.path != new_data.path {   
@@ -137,14 +159,26 @@ impl Widget<ImageState> for ImageWidget {
         if prev_data.zoom != new_data.zoom {
             ctx.request_layout();
         }
+
+        if !prev_data.center.same(&new_data.center) {
+            ctx.request_paint();
+            ctx.request_layout();
+        }
     }
         
-    fn layout(&mut self, _lay: &mut LayoutCtx, _bc: &BoxConstraints, data: &ImageState, _: &Env) -> Size {                
+    fn layout(&mut self, lay: &mut LayoutCtx, _bc: &BoxConstraints, data: &ImageState, env: &Env) -> Size {                
         let image_rect = data.get_rect();
+        // Compute text boxes
+        let mut text_boxes = Vec::new();
+        for text_box in &mut self.text_boxes {
+            let text_box_size = text_box.layout(lay, _bc, &"pomme".to_string(), env);
+            let text_box_rect = Rect::from_points(Point::new(0.0, 0.0), Point::new(20.0, 10.0));
+            text_boxes.push(text_box_rect);
+        }
         image_rect.size()
     }
     
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &ImageState, env: &Env) {
         if let Some(cached_img) = self.cached_image.as_ref()  {
             let image_rect = data.get_rect();
             ctx.draw_image(cached_img, image_rect, InterpolationMode::Bilinear);
@@ -157,8 +191,15 @@ impl Widget<ImageState> for ImageWidget {
             self.cached_image = Some(cached_img);
         }
 
+        // Draw text boxes
+        println!("text boxes: {:?}", self.text_boxes.len());
+        for text_box in self.text_boxes.iter_mut() {
+            println!("paint text box");
+            text_box.paint(ctx, &"pomme".to_string(), env);
+        }
+
         // Draw ocr boxes
-        if let Some(ocr) = self.ocr.as_ref() {
+        /*if let Some(ocr) = self.ocr.as_ref() {
             for ocr_text_box in &ocr.content {
                 // Draw boxe
                 let mut box_rect = Rect::from_points(ocr_text_box.boxes[0], ocr_text_box.boxes[1]);
@@ -169,7 +210,7 @@ impl Widget<ImageState> for ImageWidget {
                 box_rect = box_rect.scale_from_origin(data.zoom);
                 ctx.stroke(box_rect, &Color::RED, 1.0);
             }
-        }
+        }*/
         
         // TODO: Add margin to image rect
     }
@@ -177,11 +218,15 @@ impl Widget<ImageState> for ImageWidget {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut ImageState, _env: &Env) {
         if let Event::Command(cmd) = event {
             if cmd.is(SEND_OCR) {
-                self.ocr = Some(cmd.get_unchecked(SEND_OCR).clone());
-                ctx.request_paint();
+                //self.ocr = Some(cmd.get_unchecked(SEND_OCR).clone());
+
+                ctx.request_paint();    
             } else if cmd.is(RESET_OCR) {
-                self.ocr = None;
+                //self.text_boxes.clear();
             }
+        }
+        for text_box in &mut self.text_boxes {
+            text_box.event(ctx, event, &mut "pomme".to_string(), _env);
         }
     }
 }
