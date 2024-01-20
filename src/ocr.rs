@@ -1,12 +1,12 @@
 use std::{process::Command, path::Path};
 
-#[derive(Debug)]
-pub struct Point(i32, i32);
+use druid::{Data, Rect, Point, im::Vector};
 
-#[derive(Debug)]
+
+#[derive(Debug, Clone, Data)]
 pub struct OcrTextBox {
-    boxes: Vec<(Point, Point)>,
-    text: String,
+    pub boxes: Rect,
+    pub text: String,
     confidence: f64,
 }
 
@@ -20,7 +20,7 @@ impl OcrTextBox {
         // Parse points
         // Remove ( and )
         let points_str = parts[0].trim_start_matches('(').trim_end_matches(')');
-        let boxes: Vec<(Point, Point)> = points_str.split("),(").map(|point| {
+        let boxes = points_str.split("),(").map(|point| {
             let points: Vec<&str> = point.split('-').map(|x| x.trim_start_matches('[').trim_end_matches(']')).collect();
             if points.len() != 2 {
                 panic!("Invalid point format");
@@ -36,11 +36,10 @@ impl OcrTextBox {
             }
             
 
-            let point1 = Point(point1[0].parse::<i32>().unwrap(), point1[1].parse::<i32>().unwrap());
-            let point2 = Point(point2[0].parse::<i32>().unwrap(), point2[1].parse::<i32>().unwrap());
-            (point1, point2)
-
-        }).collect();
+            let point1 = Point::new(point1[0].parse::<f64>().unwrap(), point1[1].parse::<f64>().unwrap());
+            let point2 = Point::new(point2[0].parse::<f64>().unwrap(), point2[1].parse::<f64>().unwrap());
+            Rect::from_points(point1, point2)
+        });
 
         // Parse text
         let text = parts[1].to_string();
@@ -48,13 +47,18 @@ impl OcrTextBox {
         // Parse confidence
         let confidence = parts[2].parse::<f64>().unwrap();
     
-        Ok(OcrTextBox { boxes, text, confidence })
+        Ok(Self {
+            boxes: boxes.collect::<Vec<_>>()[0],
+            text,
+            confidence,
+        })
     }
-    }
+}
 
+#[derive(Clone, Data)]
 pub struct Ocr {
     img_path: String,
-    pub content: Vec<OcrTextBox>,
+    pub content: Vector<OcrTextBox>,
 }
 
 impl Ocr {
@@ -75,7 +79,7 @@ impl Ocr {
         println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
         Self {
             img_path: path.to_string(),
-            content: Vec::new(),
+            content: content.into(),
         }
     }
 }

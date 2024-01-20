@@ -2,10 +2,11 @@ use druid::{AppDelegate, DelegateCtx, Command, Target, Env, commands, Handled, S
 
 use crate::{prelude::*, dialog::open_image_dialog};
 
-use self::image::ImageStateTrait;
+use self::{image::ImageStateTrait, ocr::Ocr};
 
-pub const CTRL: Selector<bool> = Selector::new("custom.ctrl_pressed");
-
+pub const CTRL: Selector<bool> = Selector::new("imagine.ctrl_pressed");
+pub const SEND_OCR: Selector<Ocr> = Selector::new("imagine.send_ocr");
+pub const RESET_OCR: Selector<()> = Selector::new("imagine.reset_ocr");
 pub struct Delegate {
     window_size: Size,
 }
@@ -21,7 +22,7 @@ impl Default for Delegate {
 impl AppDelegate<AppState> for Delegate {
     fn command(
         &mut self,
-        _ctx: &mut DelegateCtx,
+        ctx: &mut DelegateCtx,
         _target: Target,
         cmd: &Command,
         data: &mut AppState,
@@ -29,7 +30,8 @@ impl AppDelegate<AppState> for Delegate {
     ) -> Handled {
         if let Some(file_info) = cmd.get(commands::OPEN_FILE) {
             // Get the window size
-            data.image_state.change_image(file_info.path().to_str().unwrap(), self.window_size);
+            let handle = ctx.get_external_handle();
+            data.image_state.change_image(file_info.path().to_str().unwrap(), self.window_size, handle);
             // Show the window now that we have an image
             return Handled::Yes;
         } 
@@ -49,6 +51,7 @@ impl AppDelegate<AppState> for Delegate {
                     // Hide the window until we have an image
                     //ctx.submit_command(commands::HIDE_WINDOW.to(window_id));
                     ctx.submit_command(commands::SHOW_OPEN_PANEL.with(open_image_dialog()).to(window_id));
+                    ctx.submit_command(RESET_OCR);
                     ctx.submit_command(commands::HIDE_WINDOW.to(window_id));
                     Some(event)
                 },

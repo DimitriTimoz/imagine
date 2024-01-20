@@ -1,6 +1,6 @@
-use std::{path::Path, sync::Mutex};
+use std::path::Path;
 
-use druid::{piet::InterpolationMode, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine};
+use druid::{piet::{InterpolationMode, Text}, LifeCycleCtx, LifeCycle, widget::Axis, Affine, Target, Rect};
 use ::image::{open, ImageError};
 
 #[cfg(target_os = "macos")]
@@ -11,7 +11,7 @@ use druid::piet::CairoImage as CoreGraphicsImage;
 
 use crate::prelude::*;
 
-use self::{delegate::CTRL, ocr::{Ocr, OcrTextBox}};
+use self::{delegate::{CTRL, SEND_OCR, RESET_OCR}, ocr::Ocr};
 
 #[derive(Clone, Data, Lens)]
 pub struct ImageState {
@@ -21,7 +21,6 @@ pub struct ImageState {
     pub image_buf: ImageBuf,
     pub mouse_pos: Vec2,
     pub path: String,
-    pub text_boxes: Arc<Mutex<Option<Vec<OcrTextBox>>>>,
 }
 
 impl Default for ImageState {
@@ -33,14 +32,13 @@ impl Default for ImageState {
             image_buf: ImageBuf::empty(),
             path: String::new(),
             min_zoom: 0.2,
-            text_boxes: Arc::new(Mutex::new(None)),
         }
     }
 }
 
 pub trait ImageStateTrait {
     fn add_zoom(&mut self, zoom_delta: f64, ctx: &mut EventCtx);
-    fn change_image(&mut self, path: &str, window_size: Size);
+    fn change_image(&mut self, path: &str, window_size: Size, handle: druid::ExtEventSink);
     fn get_rect(&self) -> druid::Rect;
     fn set_mouse_pos(&mut self, mouse_pos: Vec2);
     fn get_center(&self) -> Vec2;
@@ -50,7 +48,7 @@ pub trait ImageStateTrait {
 
 impl ImageStateTrait for ImageState {
     /// Change the image and reset the zoom
-    fn change_image(&mut self, path: &str, window_size: Size) {
+    fn change_image(&mut self, path: &str, window_size: Size, handle: druid::ExtEventSink) {
         self.image_buf = load_and_convert_image(path);
         self.path = path.to_string();
         
@@ -61,13 +59,13 @@ impl ImageStateTrait for ImageState {
         self.zoom = zoom_x.min(zoom_y);
         self.center = image_rect.center().to_vec2();
         self.min_zoom = self.zoom / 5.0;
-
+        
         // Call asynchroneously the ocr
         let path = path.to_string();
-        let ocr_result = Arc::clone(&self.text_boxes);
+
         std::thread::spawn(move || {
             let ocr = Ocr::get_text(path);
-            *ocr_result.lock().unwrap() = Some(ocr.content);
+            handle.submit_command(SEND_OCR, ocr, Target::Auto).expect("Failed to send OCR complete event");
         });
     }
 
@@ -122,7 +120,7 @@ impl ImageStateTrait for ImageState {
 #[derive(Default)]
 pub struct ImageWidget {
     cached_image: Option<CoreGraphicsImage>,
-    text: Vec<TextBox<String>>,
+    ocr: Option<Ocr>,
 }
 
 impl Widget<ImageState> for ImageWidget {
@@ -157,12 +155,30 @@ impl Widget<ImageState> for ImageWidget {
             ctx.draw_image(&cached_img, image_rect, InterpolationMode::Bilinear);
             self.cached_image = Some(cached_img);
         }
+
+        // Draw ocr boxes
+        if let Some(ocr) = self.ocr.as_ref() {
+            for ocr_text_box in &ocr.content {
+                let rect = ocr_text_box.boxes.scale_from_origin(data.zoom);
+                ctx.stroke(rect, &Color::RED, 3.0); 
+
+                // Draw text
+                let text_layout = ctx.text().new_text_layout(ocr_text_box.text.clone());                
+            }
+        }
         
         // TODO: Add margin to image rect
     }
 
-    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut ImageState, _env: &Env) {
-    
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut ImageState, _env: &Env) {
+        if let Event::Command(cmd) = event {
+            if cmd.is(SEND_OCR) {
+                self.ocr = Some(cmd.get_unchecked(SEND_OCR).clone());
+                ctx.request_paint();
+            } else if cmd.is(RESET_OCR) {
+                self.ocr = None;
+            }
+        }
     }
 }
 
