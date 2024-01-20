@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use druid::{piet::{InterpolationMode, Text}, LifeCycleCtx, LifeCycle, widget::Axis, Affine, Target, Rect};
+use druid::{piet::{InterpolationMode, Text}, LifeCycleCtx, LifeCycle, widget::{Axis, TextBox}, Affine, Target, Rect};
 use ::image::{open, ImageError};
 
 #[cfg(target_os = "macos")]
@@ -121,6 +121,7 @@ impl ImageStateTrait for ImageState {
 pub struct ImageWidget {
     cached_image: Option<CoreGraphicsImage>,
     ocr: Option<Ocr>,
+    recognized_text: Vec<TextBox<String>>
 }
 
 impl Widget<ImageState> for ImageWidget {
@@ -159,11 +160,14 @@ impl Widget<ImageState> for ImageWidget {
         // Draw ocr boxes
         if let Some(ocr) = self.ocr.as_ref() {
             for ocr_text_box in &ocr.content {
-                let rect = ocr_text_box.boxes.scale_from_origin(data.zoom);
-                ctx.stroke(rect, &Color::RED, 3.0); 
-
-                // Draw text
-                let text_layout = ctx.text().new_text_layout(ocr_text_box.text.clone());                
+                // Draw boxe
+                let mut box_rect = Rect::from_points(ocr_text_box.boxes[0], ocr_text_box.boxes[1]);
+                for point in &ocr_text_box.boxes {
+                    box_rect = box_rect.union(Rect::from_center_size(*point, (1.0, 1.0)));
+                }
+                // Adapt rect to zoom
+                box_rect = box_rect.scale_from_origin(data.zoom);
+                ctx.stroke(box_rect, &Color::RED, 1.0);
             }
         }
         

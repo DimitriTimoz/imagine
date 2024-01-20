@@ -21,7 +21,7 @@ def main():
 
                 text = row[1]
                 confidence = row[2]
-                box = f"({p1}-{p2}),({p3}-{p4})"
+                box = f"({p1}-{p2}-{p3}-{p4})"
                 print(box, text, confidence, sep=';')
             
             return 0    

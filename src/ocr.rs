@@ -5,7 +5,7 @@ use druid::{Data, Rect, Point, im::Vector};
 
 #[derive(Debug, Clone, Data)]
 pub struct OcrTextBox {
-    pub boxes: Rect,
+    pub boxes: Vector<Point>,
     pub text: String,
     confidence: f64,
 }
@@ -20,25 +20,18 @@ impl OcrTextBox {
         // Parse points
         // Remove ( and )
         let points_str = parts[0].trim_start_matches('(').trim_end_matches(')');
-        let boxes = points_str.split("),(").map(|point| {
-            let points: Vec<&str> = point.split('-').map(|x| x.trim_start_matches('[').trim_end_matches(']')).collect();
-            if points.len() != 2 {
-                panic!("Invalid point format");
-            }
-            // Remove spaces everywhere
-            let points: Vec<String> = points.iter().map(|x| x.replace(' ', "")).collect();
+        let boxes = points_str.split('-').map(|point| {
+            let point = point.trim_start_matches('[').trim_end_matches(']').replace(' ', "");
+            let point: Vec<&str> = point.split(',').collect();
 
-            let point1: Vec<&str> = points[0].split(',').collect();
-            let point2: Vec<&str> = points[1].split(',').collect();
-
-            if point1.len() != 2 || point2.len() != 2 {
+            if point.len() != 2 {
                 panic!("Invalid point format");
             }
             
-
-            let point1 = Point::new(point1[0].parse::<f64>().unwrap(), point1[1].parse::<f64>().unwrap());
-            let point2 = Point::new(point2[0].parse::<f64>().unwrap(), point2[1].parse::<f64>().unwrap());
-            Rect::from_points(point1, point2)
+            Point::new(
+                point[0].parse::<i32>().unwrap() as f64,
+                point[1].parse::<i32>().unwrap() as f64,
+            )
         });
 
         // Parse text
@@ -48,7 +41,7 @@ impl OcrTextBox {
         let confidence = parts[2].parse::<f64>().unwrap();
     
         Ok(Self {
-            boxes: boxes.collect::<Vec<_>>()[0],
+            boxes: boxes.collect(),
             text,
             confidence,
         })
